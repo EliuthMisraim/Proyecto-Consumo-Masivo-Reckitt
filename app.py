@@ -92,13 +92,18 @@ if geojson_data is not None:
         map_data,
         geojson=geojson_data,
         locations='REGION_STATES',
-        featureidkey='properties.ENTIDAD',   # campo del shapefile INEGI
+        featureidkey='properties.ENTIDAD',
         color='TOTAL_VALUE_SALES',
         color_continuous_scale='Blues',
         labels={'TOTAL_VALUE_SALES': 'Ventas ($)'},
         hover_name='REGION_STATES',
     )
-    fig_map.update_geos(fitbounds='locations', visible=False)
+    # Bounds manuales para mostrar todo México sin cortes
+    fig_map.update_geos(
+        visible=False,
+        lataxis_range=[13.5, 33.0],
+        lonaxis_range=[-118.5, -86.5],
+    )
     fig_map.update_layout(height=520, margin={"r": 0, "t": 0, "l": 0, "b": 0})
     st.plotly_chart(fig_map, use_container_width=True)
 else:
@@ -117,17 +122,40 @@ st.divider()
 # ─── PREDICCIÓN ───────────────────────────────────────────────────────────────
 st.header("🔮 Predicción Inteligente de Demanda")
 
-model_ready = os.path.exists(MODEL_PATH) or st.session_state.get('model_trained', False)
+# Detectar modelo obsoleto: si los estados del modelo no coinciden con los datos actuales
+def _model_is_stale():
+    import joblib
+    if not os.path.exists(MODEL_PATH):
+        return True
+    try:
+        payload = joblib.load(MODEL_PATH)
+        model_states = set(payload['state_map'].keys())
+        data_states  = set(df['REGION_STATES'].unique())
+        return not model_states.issubset(data_states)
+    except Exception:
+        return True
+
+if _model_is_stale():
+    # Limpiar flag de sesión si el modelo está obsoleto
+    st.session_state.pop('model_trained', None)
+
+model_ready = os.path.exists(MODEL_PATH) and not _model_is_stale()
 
 if not model_ready:
-    st.warning("⚠️ El modelo de demanda aún no ha sido entrenado.")
+    st.warning("⚠️ El modelo aún no ha sido entrenado (o los datos cambiaron).")
     if st.button("🚀 Entrenar Modelo Reckitt"):
         with st.spinner("Entrenando algoritmo con datos históricos..."):
             train_demand_model(df)
-            st.session_state['model_trained'] = True
             st.success("✅ ¡Modelo entrenado! Ya puedes hacer predicciones.")
             st.rerun()
 else:
+    col_btn = st.columns([3, 1])
+    with col_btn[1]:
+        if st.button("🔄 Reentrenar modelo"):
+            train_demand_model(df)
+            st.success("✅ Modelo actualizado.")
+            st.rerun()
+
     c1, c2, c3 = st.columns(3)
     with c1:
         s_item  = st.selectbox("🏷️ SKU del Producto",  options=sorted(df['ITEM_CODE'].unique()))

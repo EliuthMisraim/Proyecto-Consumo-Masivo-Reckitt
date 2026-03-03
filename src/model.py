@@ -34,10 +34,17 @@ def train_demand_model(df):
 
 def predict_sales(month, item_code, state):
     payload = joblib.load('/tmp/sales_model.pkl')
-    
-    # Obtenemos los IDs numéricos que el modelo entiende
-    item_id = payload['item_map'].get(item_code, 0)
-    state_id = payload['state_map'].get(state, 0)
-    
+
+    if state not in payload['state_map']:
+        raise ValueError(
+            f"El estado '{state}' no está en el modelo entrenado. "
+            "Haz clic en '🔄 Reentrenar modelo' para actualizar."
+        )
+
+    item_id  = payload['item_map'].get(item_code, 0)
+    state_id = payload['state_map'][state]
+
+    import pandas as pd
     input_df = pd.DataFrame([[month, item_id, state_id]], columns=['MONTH', 'ITEM_ID', 'STATE_ID'])
-    return payload['model'].predict(input_df)[0]
+    result = payload['model'].predict(input_df)[0]
+    return max(0.0, result)   # nunca predecir unidades negativas
