@@ -2,6 +2,11 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import os
+import sys
+
+# Agregar la carpeta src/ al path para que funcione en Streamlit Cloud
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
+
 from extract import get_processed_data
 from model import predict_sales, train_demand_model
 
