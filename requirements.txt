@@ -3,3 +3,4 @@ scikit-learn
 streamlit>=1.40.0
 plotly
 joblib
+geopandas
