@@ -44,7 +44,7 @@ def transform_data(df):
         return None
     
     # 1. Limpieza de nombres de columnas
-    df.columns = df.columns.str.strip().upper()
+    df.columns = df.columns.str.strip().str.upper()
     
     # 2. Tipado numérico
     cols_numericas = ['TOTAL_UNIT_SALES', 'TOTAL_VALUE_SALES']
