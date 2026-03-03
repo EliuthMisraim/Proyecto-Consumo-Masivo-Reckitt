@@ -1,12 +1,5 @@
-<<<<<<< HEAD
 pandas
 scikit-learn
 streamlit
 plotly
-=======
-pandas
-scikit-learn
-streamlit
-plotly
->>>>>>> 51ca51b56c582e7dcaa7ff9f61f3dc58be59bdaa
 joblib
