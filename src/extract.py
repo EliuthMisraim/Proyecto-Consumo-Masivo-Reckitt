@@ -1,44 +1,78 @@
 import pandas as pd
+import numpy as np
 import logging
 
-# Configuración básica de logs para ver qué pasa en el proceso
-logging.basicConfig(level=logging.INFO)
+# Configuración de logs para monitorear el proceso en la consola
+logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 
-def load_data():
-    """Carga los archivos CSV con sus codificaciones específicas."""
+def load_data(file_path='data/FACT_SALES_GEO.csv'):
+    """
+    Carga el archivo principal de ventas con datos geográficos.
+    """
     try:
-        dim_calendar = pd.read_csv('data/DIM_CALENDAR.csv', sep=';', encoding='utf-8-sig')
-        dim_product = pd.read_csv('data/DIM_PRODUCT.csv', sep=';', encoding='latin1')
-        fact_sales = pd.read_csv('data/FACT_SALES.csv', sep=',', quotechar='"')
-        return dim_calendar, dim_product, fact_sales
-    except Exception as e:
-        logging.error(f"Error cargando archivos: {e}")
+        df = pd.read_csv(file_path)
+        logging.info(f"Archivo {file_path} cargado exitosamente.")
+        return df
+    except FileNotFoundError:
+        logging.error(f"No se encontró el archivo en {file_path}. Revisa la carpeta 'data/'.")
         return None
 
-def clean_data(dim_calendar, dim_product, fact_sales):
-    """Limpia nombres, convierte tipos y genera el df_master."""
-    # Limpieza de espacios en columnas
-    for df in [dim_calendar, dim_product, fact_sales]:
-        df.columns = df.columns.str.strip()
-
-    # Conversión numérica
-    cols_to_fix = ['TOTAL_UNIT_SALES', 'TOTAL_VALUE_SALES']
-    for col in cols_to_fix:
-        fact_sales[col] = pd.to_numeric(fact_sales[col], errors='coerce')
-
-    # Unión de tablas (Merge)
-    cols_calendar = ['WEEK', 'DATE', 'YEAR', 'MONTH']
-    df_master = pd.merge(fact_sales, dim_calendar[cols_calendar], on='WEEK', how='left')
-    df_master = pd.merge(df_master, dim_product, left_on='ITEM_CODE', right_on='ITEM', how='left')
-
-    # Formato de fecha
-    df_master['DATE'] = pd.to_datetime(df_master['DATE'], format='%d/%m/%Y', errors='coerce')
+def transform_data(df):
+    """
+    Realiza la limpieza, tipado de datos y feature engineering.
+    """
+    if df is None:
+        return None
     
-    logging.info("ETL completado: df_master generado correctamente.")
-    return df_master
+    # 1. Limpieza de nombres de columnas
+    df.columns = df.columns.str.strip().str.upper()
+    
+    # 2. Manejo de tipos numéricos
+    cols_numericas = ['TOTAL_UNIT_SALES', 'TOTAL_VALUE_SALES', 'TOTAL_UNIT_AVG_WEEKLY_SALES']
+    for col in cols_numericas:
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
+    
+    # 3. Transformación de la columna WEEK a DATE (Formato: WW-YY)
+    # Esto es vital para las gráficas de líneas y series de tiempo
+    if 'WEEK' in df.columns:
+        try:
+            # Dividimos '34-22' en semana 34 y año 2022
+            parts = df['WEEK'].str.split('-', expand=True)
+            df['YEAR_TEMP'] = '20' + parts[1]
+            df['WEEK_TEMP'] = parts[0]
+            
+            # Creamos una fecha real (lunes de esa semana)
+            df['DATE'] = pd.to_datetime(
+                df['YEAR_TEMP'] + '-W' + df['WEEK_TEMP'] + '-1', 
+                format='%G-W%V-%u', 
+                errors='coerce'
+            )
+            # Eliminamos columnas temporales
+            df.drop(columns=['YEAR_TEMP', 'WEEK_TEMP'], inplace=True)
+            logging.info("Columna DATE generada correctamente a partir de WEEK.")
+        except Exception as e:
+            logging.warning(f"No se pudo convertir WEEK a DATE: {e}")
+
+    # 4. Feature Engineering para el Dashboard
+    if 'DATE' in df.columns:
+        df['MONTH'] = df['DATE'].dt.month
+        df['YEAR'] = df['DATE'].dt.year
+        df['MONTH_NAME'] = df['DATE'].dt.month_name()
+
+    return df
+
+def get_processed_data():
+    """
+    Función maestra que ejecuta el pipeline completo.
+    """
+    raw_data = load_data()
+    processed_data = transform_data(raw_data)
+    return processed_data
 
 if __name__ == "__main__":
-    # Prueba rápida de funcionamiento
-    cal, prod, sales = load_data()
-    df = clean_data(cal, prod, sales)
-    print(df.head())
+    # Prueba rápida al ejecutar el script directamente
+    test_df = get_processed_data()
+    if test_df is not None:
+        print(test_df.head())
+        print(test_df.info())

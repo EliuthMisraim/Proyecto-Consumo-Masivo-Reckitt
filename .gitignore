@@ -150,12 +150,6 @@ cython_debug/
 #  JetBrains specific template is located in a separate file.
 #  Search for GitHub 'JetBrains.gitignore' next to this file.
 
-# Data files (often large)
-data/
-*.csv
-*.xlsx
-*.parquet
-
 # Model files
 src/*.pkl
 *.joblib
