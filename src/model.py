@@ -29,11 +29,11 @@ def train_demand_model(df):
         'item_map': item_map,
         'state_map': state_map
     }
-    joblib.dump(payload, 'src/sales_model.pkl')
+    joblib.dump(payload, '/tmp/sales_model.pkl')
     return model
 
 def predict_sales(month, item_code, state):
-    payload = joblib.load('src/sales_model.pkl')
+    payload = joblib.load('/tmp/sales_model.pkl')
     
     # Obtenemos los IDs numéricos que el modelo entiende
     item_id = payload['item_map'].get(item_code, 0)
