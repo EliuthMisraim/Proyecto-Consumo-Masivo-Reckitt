@@ -1,32 +1,54 @@
-# 📊 Proyecto de Consumo Masivo - Reckitt (End-to-End)
+# 🧼 Reckitt Sales Intelligence System
+> **End-to-End Demand Forecasting & Analytics Platform**
 
-Este repositorio contiene una solución integral de Ciencia de Datos para el sector de consumo masivo, abarcando desde la extracción y limpieza de datos (ETL) hasta el entrenamiento de modelos predictivos y el despliegue de una interfaz interactiva.
+Este proyecto es una solución integral de **Ciencia de Datos y MLOps** diseñada para la industria de consumo masivo (CPG). Permite visualizar el desempeño histórico de ventas de **Reckitt** en México y predecir la demanda futura mediante inteligencia artificial.
 
-## 🚀 Descripción del Proyecto
+---
 
-El objetivo principal es proporcionar una herramienta visual para el monitoreo de ventas y la predicción de demanda de productos. Utiliza datos históricos de ventas, catálogos de productos y calendarios comerciales para generar insights accionables.
+## 🚀 Características Principales
 
-## 📁 Estructura del Proyecto
+* **Dashboard Interactivo:** Visualización regional con mapas coropléticos (GeoJSON) y KPIs de negocio (Ventas Totales, Ticket Promedio, Top Productos).
+* **Modelo de Machine Learning:** Algoritmo de *Random Forest* optimizado para proyectar unidades vendidas por SKU, Estado y Mes.
+* **Arquitectura de Microservicios:** Separación de preocupaciones entre el Frontend (Streamlit) y el Backend (FastAPI).
+* **Despliegue Profesional:** Contenerización con **Docker** y despliegue en la nube (**Render**).
 
-El proyecto sigue una organización modular y limpia:
+---
 
-- `data/`: Contiene los conjuntos de datos originales (CSV) utilizados para el análisis.
-- `src/`: Directorio de código fuente.
-  - `extract.py`: Lógica de carga de datos (ETL), limpieza y unión de tablas.
-  - `model.py`: Entrenamiento del modelo `RandomForestRegressor` y funciones de predicción.
-- `notebooks/`: Espacio para experimentación, análisis exploratorio (EDA) y prototipado.
-- `app.py`: Aplicación web interactiva desarrollada con **Streamlit**.
-- `requirements.txt`: Dependencias necesarias para ejecutar el proyecto.
+## 🛠️ Stack Tecnológico
 
-## 🛠️ Tecnologías Utilizadas
+| Componente | Tecnología |
+| :--- | :--- |
+| **Lenguaje** | Python 3.9+ |
+| **Análisis de Datos** | Pandas, Numpy |
+| **Visualización** | Streamlit, Plotly Express |
+| **Machine Learning** | Scikit-Learn (Random Forest), Joblib |
+| **Backend API** | FastAPI, Uvicorn, Pydantic |
+| **Infraestructura** | Docker, Docker-Compose |
+| **Cloud Hosting** | Render (API), Streamlit Cloud (Dashboard) |
 
-- **Lenguaje:** Python 3.x
-- **Análisis de Datos:** Pandas, NumPy
-- **Machine Learning:** Scikit-Learn, Joblib
-- **Visualización:** Plotly, Streamlit
-- **Control de Versiones:** Git & GitHub
+---
+
+## 🏗️ Arquitectura del Proyecto
+
+El sistema está estructurado bajo principios de código limpio y modularidad:
+
+```text
+├── data/               # Datasets y archivos geográficos (GeoJSON)
+├── src/                # Lógica central del negocio
+│   ├── extract.py      # Pipeline ETL y normalización geográfica (INEGI)
+│   └── model.py        # Entrenamiento y lógica de inferencia del modelo
+├── app.py              # Interfaz de usuario (Streamlit)
+├── main.py             # Servidor de la API (FastAPI)
+├── Dockerfile          # Instrucciones de imagen Docker
+├── docker-compose.yml  # Orquestación de servicios
+└── requirements.txt    # Dependencias del proyecto
+```
+
+---
 
 ## ⚙️ Instalación y Uso
+
+### 🐳 Usando Docker (Recomendado)
 
 1. **Clonar el repositorio:**
    ```bash
@@ -34,21 +56,36 @@ El proyecto sigue una organización modular y limpia:
    cd Proyecto-Consumo-Masivo-Reckitt
    ```
 
-2. **Instalar dependencias:**
+2. **Levantar los servicios:**
    ```bash
+   docker-compose up --build
+   ```
+   - El **Dashboard** estará disponible en: `http://localhost:8501`
+   - La **API** estará disponible en: `http://localhost:8000/docs`
+
+### 💻 Instalación Local
+
+1. **Clonar el repositorio:**
+   ```bash
+   git clone https://github.com/EliuthMisraim/Proyecto-Consumo-Masivo-Reckitt.git
+   cd Proyecto-Consumo-Masivo-Reckitt
+   ```
+
+2. **Crear entorno e instalar dependencias:**
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # En Windows: venv\Scripts\activate
    pip install -r requirements.txt
    ```
 
-3. **Ejecutar la aplicación:**
+3. **Ejecutar Dashboard y API:**
    ```bash
+   # En una terminal para la API
+   uvicorn main:app --reload
+
+   # En otra terminal para el Dashboard
    streamlit run app.py
    ```
-
-## 🧠 Características del Modelo
-
-El modelo de predicción de demanda utiliza un **Random Forest Regressor** que considera variables como el mes, el año y el código del producto para estimar el volumen de ventas esperado. El pipeline incluye:
-- Preprocesamiento y codificación de variables categóricas.
-- Persistencia del modelo entrenado (`.pkl`) para una inferencia rápida en producción.
 
 ---
 *Desarrollado por [EliuthMisraim](https://github.com/EliuthMisraim)*
