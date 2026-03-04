@@ -1,6 +1,10 @@
 import pandas as pd
 from sklearn.ensemble import RandomForestRegressor
 import joblib
+import os
+import tempfile
+
+MODEL_PATH = os.path.join(tempfile.gettempdir(), 'sales_model.pkl')
 
 def train_demand_model(df):
     # 1. Reducción de datos: El modelo no necesita millones de filas para el simulador
@@ -29,11 +33,11 @@ def train_demand_model(df):
         'item_map': item_map,
         'state_map': state_map
     }
-    joblib.dump(payload, '/tmp/sales_model.pkl')
+    joblib.dump(payload, MODEL_PATH)
     return model
 
 def predict_sales(month, item_code, state):
-    payload = joblib.load('/tmp/sales_model.pkl')
+    payload = joblib.load(MODEL_PATH)
 
     if state not in payload['state_map']:
         raise ValueError(

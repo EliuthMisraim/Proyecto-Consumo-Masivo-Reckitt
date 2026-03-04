@@ -14,7 +14,8 @@ from model import train_demand_model, predict_sales
 # ─── CONFIG ───────────────────────────────────────────────────────────────────
 st.set_page_config(page_title="Reckitt Sales Intelligence", layout="wide", page_icon="🧼")
 
-MODEL_PATH  = '/tmp/sales_model.pkl'
+import tempfile
+MODEL_PATH  = os.path.join(tempfile.gettempdir(), 'sales_model.pkl')
 SHP_JSON = 'data/mexico.geojson'
 
 # ─── CARGA DE DATOS ───────────────────────────────────────────────────────────
