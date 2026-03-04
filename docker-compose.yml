@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  # Servicio 1: El motor (La API)
+  api_reckitt:
+    build: .
+    container_name: api_service
+    ports:
+      - "8000:8000"
+    command: uvicorn main:app --host 0.0.0.0 --port 8000
+    volumes:
+      - .:/app # Esto permite que los cambios en tu código se vean sin reiniciar todo
+
+  # Servicio 2: La cara bonita (El Dashboard)
+  dashboard_reckitt:
+    build: .
+    container_name: dashboard_service
+    ports:
+      - "8501:8501"
+    command: streamlit run app.py --server.port=8501 --server.address=0.0.0.0
+    depends_on:
+      - api_reckitt
+    volumes:
+      - .:/app
