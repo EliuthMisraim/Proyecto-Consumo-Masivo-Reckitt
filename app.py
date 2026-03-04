@@ -2,6 +2,7 @@ import streamlit as st
 import plotly.express as px
 import os
 import sys
+import pandas as pd
 import json
 
 # Agregar src/ al path para que funcione en Streamlit Cloud
@@ -84,10 +85,14 @@ st.subheader("📍 Desempeño Geográfico por Estado")
 map_data = (
     df_final.groupby('REGION_STATES')['TOTAL_VALUE_SALES']
     .sum().reset_index()
-    .sort_values('TOTAL_VALUE_SALES', ascending=False)
 )
 
 if geojson_data is not None:
+    # Aseguramos que los 32 estados estén en map_data para dibujar todo México sin cortes
+    all_states = [f['properties']['ENTIDAD'] for f in geojson_data['features']]
+    all_states_df = pd.DataFrame({'REGION_STATES': all_states})
+    map_data = pd.merge(all_states_df, map_data, on='REGION_STATES', how='left').fillna({'TOTAL_VALUE_SALES': 0})
+
     fig_map = px.choropleth(
         map_data,
         geojson=geojson_data,
@@ -98,16 +103,12 @@ if geojson_data is not None:
         labels={'TOTAL_VALUE_SALES': 'Ventas ($)'},
         hover_name='REGION_STATES',
     )
-    # Bounds manuales para mostrar todo México sin cortes
-    fig_map.update_geos(
-        visible=False,
-        lataxis_range=[13.5, 33.0],
-        lonaxis_range=[-118.5, -86.5],
-    )
+    fig_map.update_geos(fitbounds='locations', visible=False)
     fig_map.update_layout(height=520, margin={"r": 0, "t": 0, "l": 0, "b": 0})
     st.plotly_chart(fig_map, use_container_width=True)
 else:
     # Fallback: gráfica de barras horizontal
+    map_data = map_data.sort_values('TOTAL_VALUE_SALES', ascending=False)
     fig_bar = px.bar(
         map_data, x='TOTAL_VALUE_SALES', y='REGION_STATES',
         orientation='h', color='TOTAL_VALUE_SALES',
@@ -116,6 +117,40 @@ else:
     )
     fig_bar.update_layout(height=520, yaxis={'categoryorder': 'total ascending'})
     st.plotly_chart(fig_bar, use_container_width=True)
+
+# ─── TENDENCIAS Y TOP PRODUCTOS ──────────────────────────────────────────────
+st.divider()
+c_chart1, c_chart2 = st.columns(2)
+
+with c_chart1:
+    st.subheader("📈 Tendencia de Ventas")
+    if 'DATE' in df_final.columns:
+        trend_data = df_final.groupby('DATE')['TOTAL_VALUE_SALES'].sum().reset_index().sort_values('DATE')
+        fig_trend = px.line(
+            trend_data, x='DATE', y='TOTAL_VALUE_SALES',
+            labels={'TOTAL_VALUE_SALES': 'Ventas ($)', 'DATE': 'Fecha'},
+            markers=True, line_shape='spline',
+            color_discrete_sequence=['#1f77b4']
+        )
+        st.plotly_chart(fig_trend, use_container_width=True)
+    else:
+        st.info("No hay datos de fecha disponibles.")
+
+with c_chart2:
+    st.subheader("🏆 Top 10 Productos")
+    top_items = df_final.groupby('ITEM_CODE')['TOTAL_VALUE_SALES'].sum().reset_index()
+    top_items = top_items.sort_values('TOTAL_VALUE_SALES', ascending=False).head(10)
+    
+    # Convertir ITEM_CODE a string para evitar que plotly lo trate como número en el eje
+    top_items['ITEM_CODE'] = top_items['ITEM_CODE'].astype(str)
+    
+    fig_top = px.bar(
+        top_items, x='TOTAL_VALUE_SALES', y='ITEM_CODE', orientation='h',
+        labels={'TOTAL_VALUE_SALES': 'Ventas ($)', 'ITEM_CODE': 'SKU Producto'},
+        color='TOTAL_VALUE_SALES', color_continuous_scale='Blues'
+    )
+    fig_top.update_layout(yaxis={'categoryorder': 'total ascending'})
+    st.plotly_chart(fig_top, use_container_width=True)
 
 st.divider()
 
