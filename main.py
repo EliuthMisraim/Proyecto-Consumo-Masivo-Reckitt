@@ -30,13 +30,16 @@ def home():
 def get_prediction(data: PredictionInput):
     try:
         # Llamamos a tu función lógica de model.py
-        resultado = predict_sales(data.month, data.item_code, data.state)
+        # El modelo actual requiere (month, year, item_code)
+        # Por ahora usaremos 2024 como año predeterminado si no se incluye
+        year_default = 2024
+        resultado = predict_sales(data.month, year_default, data.item_code)
         
         return {
             "status": "success",
             "item_code": data.item_code,
             "state": data.state,
-            "predicted_demand": round(resultado, 2)
+            "predicted_demand": round(float(resultado), 2)
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

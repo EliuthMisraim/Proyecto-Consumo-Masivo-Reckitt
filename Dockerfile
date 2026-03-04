@@ -1,5 +1,5 @@
 # 1. Usamos una imagen de Python ligera como base
-FROM python:3.9-slim
+FROM python:3.11-slim
 
 # 2. Establecemos el directorio de trabajo dentro del contenedor
 WORKDIR /app
