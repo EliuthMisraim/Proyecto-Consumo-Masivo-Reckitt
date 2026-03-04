@@ -15,37 +15,20 @@ from model import train_demand_model, predict_sales
 st.set_page_config(page_title="Reckitt Sales Intelligence", layout="wide", page_icon="🧼")
 
 MODEL_PATH  = '/tmp/sales_model.pkl'
-SHP_ZIP     = 'dest_2010gw_c.zip'
-SHP_FILE    = 'dest_2010cw.shp'
-GEOJSON_TMP = '/tmp/mexico_states.geojson'
+SHP_JSON = 'data/mexico.geojson'
 
-# ─── CARGA DE DATOS ───────────────────────────────────────────────────────────
-@st.cache_data(show_spinner="Cargando datos de ventas...")
-def load_data():
-    return get_processed_data()
-
-df = load_data()
-if df is None:
-    st.error("❌ No se pudo cargar FACT_SALES_GEO.csv")
-    st.stop()
-
-# ─── CARGA DEL GEOJSON DESDE SHAPEFILE LOCAL ─────────────────────────────────
+# ─── CARGA DEL GEOJSON ───────────────────────────────────────────────────────
 @st.cache_data(show_spinner="Preparando mapa de México...")
 def load_mexico_geojson():
     """
-    Convierte el shapefile local (dest_2010gw_c.zip) a GeoJSON en memoria.
-    Usa geopandas para reproyectar a WGS84 (lat/lon) que requiere plotly.
+    Carga el GeoJSON estático pre-procesado para evitar tiempos largos
+    de conversión de shapefile en la nube.
     """
     try:
-        import geopandas as gpd
-        gdf = gpd.read_file(f'zip://{SHP_ZIP}!{SHP_FILE}')
-        # Re-proyectar a WGS84 (EPSG:4326) - requerido por plotly
-        gdf = gdf.to_crs(epsg=4326)
-        # Solo conservamos la columna de nombre del estado
-        gdf = gdf[['ENTIDAD', 'geometry']].copy()
-        return json.loads(gdf.to_json())
+        with open(SHP_JSON, 'r', encoding='utf-8') as f:
+            return json.load(f)
     except Exception as e:
-        st.warning(f"⚠️ No se pudo cargar el shapefile: {e}")
+        st.warning(f"⚠️ No se pudo cargar el shapefile estático: {e}")
         return None
 
 geojson_data = load_mexico_geojson()
@@ -88,10 +71,13 @@ map_data = (
 )
 
 if geojson_data is not None:
-    # Aseguramos que los 32 estados estén en map_data para dibujar todo México sin cortes
+    # Aseguramos que los 32 estados estén en el DataFrame con 0 ventas si no hay filtro
     all_states = [f['properties']['ENTIDAD'] for f in geojson_data['features']]
     all_states_df = pd.DataFrame({'REGION_STATES': all_states})
-    map_data = pd.merge(all_states_df, map_data, on='REGION_STATES', how='left').fillna({'TOTAL_VALUE_SALES': 0})
+    
+    # Merge correcto: mantenemos todos los estados e insertamos las ventas reales
+    map_data = pd.merge(all_states_df, map_data, on='REGION_STATES', how='left')
+    map_data['TOTAL_VALUE_SALES'] = map_data['TOTAL_VALUE_SALES'].fillna(0)
 
     fig_map = px.choropleth(
         map_data,
