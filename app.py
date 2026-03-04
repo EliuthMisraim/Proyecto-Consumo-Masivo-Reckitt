@@ -17,6 +17,17 @@ st.set_page_config(page_title="Reckitt Sales Intelligence", layout="wide", page_
 MODEL_PATH  = '/tmp/sales_model.pkl'
 SHP_JSON = 'data/mexico.geojson'
 
+# ─── CARGA DE DATOS ───────────────────────────────────────────────────────────
+@st.cache_data(show_spinner="Cargando datos de ventas...")
+def load_data():
+    return get_processed_data()
+
+df = load_data()
+if df is None:
+    st.error("❌ No se pudo cargar FACT_SALES_GEO.csv")
+    st.stop()
+
+
 # ─── CARGA DEL GEOJSON ───────────────────────────────────────────────────────
 @st.cache_data(show_spinner="Preparando mapa de México...")
 def load_mexico_geojson():
