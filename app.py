@@ -152,7 +152,7 @@ with c_chart2:
         
         fig_top = px.bar(top_products, x='TOTAL_VALUE_SALES', y='ITEM_CODE', 
                          orientation='h', title="Top 5 por Valor de Venta",
-                         color_discrete_sequence=['#004d99'])
+                         color='TOTAL_VALUE_SALES', color_continuous_scale='Blues')
         fig_top.update_layout(yaxis={'categoryorder':'total ascending'}, margin={"r": 0, "t": 40, "l": 0, "b": 0})
         st.plotly_chart(fig_top, use_container_width=True)
 
