@@ -134,20 +134,27 @@ with c_chart1:
         st.info("No hay datos de fecha disponibles.")
 
 with c_chart2:
-    st.subheader("🏆 Top 10 Productos")
-    top_items = df_final.groupby('ITEM_CODE')['TOTAL_VALUE_SALES'].sum().reset_index()
-    top_items = top_items.sort_values('TOTAL_VALUE_SALES', ascending=False).head(10)
+    # --- TOP PRODUCTOS (INSIGHT DE NEGOCIO) ---
+    st.subheader("🏆 Top 5 Productos Estratégicos")
     
-    # Convertir ITEM_CODE a string para evitar que plotly lo trate como número en el eje
-    top_items['ITEM_CODE'] = top_items['ITEM_CODE'].astype(str)
+    # Agrupamos por nombre de producto o SKU
+    top_products = df_final.groupby('ITEM_CODE')['TOTAL_VALUE_SALES'].sum().nlargest(5).reset_index()
     
-    fig_top = px.bar(
-        top_items, x='TOTAL_VALUE_SALES', y='ITEM_CODE', orientation='h',
-        labels={'TOTAL_VALUE_SALES': 'Ventas ($)', 'ITEM_CODE': 'SKU Producto'},
-        color='TOTAL_VALUE_SALES', color_continuous_scale='Blues'
-    )
-    fig_top.update_layout(yaxis={'categoryorder': 'total ascending'})
-    st.plotly_chart(fig_top, use_container_width=True)
+    col_table, col_chart = st.columns([1, 2])
+    
+    with col_table:
+        st.write("Detalle de Ventas")
+        st.dataframe(top_products.style.format({'TOTAL_VALUE_SALES': '${:,.2f}'}), hide_index=True)
+    
+    with col_chart:
+        # Convertir ITEM_CODE a string para graficar
+        top_products['ITEM_CODE'] = top_products['ITEM_CODE'].astype(str)
+        
+        fig_top = px.bar(top_products, x='TOTAL_VALUE_SALES', y='ITEM_CODE', 
+                         orientation='h', title="Top 5 por Valor de Venta",
+                         color_discrete_sequence=['#004d99'])
+        fig_top.update_layout(yaxis={'categoryorder':'total ascending'}, margin={"r": 0, "t": 40, "l": 0, "b": 0})
+        st.plotly_chart(fig_top, use_container_width=True)
 
 st.divider()
 
